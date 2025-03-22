@@ -10,7 +10,7 @@ import { portCommand } from '../src/cli/commands/port.js';
 // Display ASCII art banner
 console.log(
   chalk.cyan(
-    figlet.textSync('aartisan', {
+    figlet.textSync('Aartisan', {
       font: 'Big',
       horizontalLayout: 'default',
       verticalLayout: 'default',
