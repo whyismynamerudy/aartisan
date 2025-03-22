@@ -1,0 +1,4 @@
+/* Custom styles that extend Tailwind */
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  }

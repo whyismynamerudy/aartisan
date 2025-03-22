@@ -1,7 +1,15 @@
 {
-    "name": "Minimal Starter",
-    "description": "A minimal starter template for React with aartisan integration",
+    "name": "Modern React Starter",
+    "description": "A modern React starter template with TypeScript, Tailwind CSS, and React Router integration",
     "version": "0.1.0",
     "author": "Aartisan Team",
-    "features": ["react", "vite", "aartisan-provider", "ai-metadata"]
+    "features": [
+      "react",
+      "typescript",
+      "vite",
+      "tailwindcss",
+      "react-router",
+      "aartisan-provider",
+      "ai-metadata"
+    ]
   }
