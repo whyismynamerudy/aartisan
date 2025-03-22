@@ -1,0 +1,7 @@
+{
+    "name": "Minimal Starter",
+    "description": "A minimal starter template for React with aartisan integration",
+    "version": "0.1.0",
+    "author": "Aartisan Team",
+    "features": ["react", "vite", "aartisan-provider", "ai-metadata"]
+  }
