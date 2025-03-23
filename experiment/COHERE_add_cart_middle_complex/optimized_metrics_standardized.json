@@ -1,0 +1,103 @@
+{
+  "start_time": 1742723186.101718,
+  "end_time": 1742723362.485923,
+  "total_duration": 176.38420510292053,
+  "steps_taken": 9,
+  "api_calls": 10,
+  "total_tokens": {
+    "prompt": 79705,
+    "completion": 950,
+    "total": 80655
+  },
+  "retries": 0,
+  "errors": [
+    "Element not found using any strategy: text=Back",
+    "Element not found using any strategy: text=Home",
+    "Element not found using any strategy: text=Events",
+    "Element not found using any strategy: text=View Details",
+    "Element not found using any strategy: xpath=//section[@data-aartisan-id=':r7:']//div[contains(text(), 'Coldplay: Music of the Spheres')]//a[text()='View Details']",
+    "Element not found using any strategy: xpath=//section[@data-aartisan-id=':r7:']//*[contains(text(), 'Coldplay: Music of the Spheres')]/following::a[text()='View Details']"
+  ],
+  "success": true,
+  "has_ai_optimizer": false,
+  "page_load_time": 0.1230771541595459,
+  "detection_time": 0.019526243209838867,
+  "interactive_elements_count": 1,
+  "actions_performed": [
+    {
+      "type": "click",
+      "target": "text=View Details"
+    },
+    {
+      "type": "click",
+      "target": "text=Back"
+    },
+    {
+      "type": "click",
+      "target": "text=Home"
+    },
+    {
+      "type": "click",
+      "target": "text=Events"
+    },
+    {
+      "type": "navigate",
+      "target": "https://aartisan-genesis-concert-ticketing.vercel.app/"
+    },
+    {
+      "type": "click",
+      "target": "text=View Details"
+    },
+    {
+      "type": "click",
+      "target": "xpath=//section[@data-aartisan-id=':r7:']//div[contains(text(), 'Coldplay: Music of the Spheres')]//a[text()='View Details']"
+    },
+    {
+      "type": "click",
+      "target": "xpath=//section[@data-aartisan-id=':r7:']//*[contains(text(), 'Coldplay: Music of the Spheres')]/following::a[text()='View Details']"
+    },
+    {
+      "type": "navigate",
+      "target": "https://aartisan-genesis-concert-ticketing.vercel.app/events"
+    }
+  ],
+  "interaction_mode": "direct",
+  "is_content_generation": false,
+  "task": "select & add to cart one seat in the middle of row in the middle of the auditorium, make the payment for the Coldplay concert",
+  "url": "https://aartisan-genesis-concert-ticketing.vercel.app/",
+  "result": "Unable to select a seat and make a payment due to website navigation and interaction issues.",
+  "collected_content": "",
+  "generated_content": null,
+  "element_inspections": [
+    {
+      "timestamp": "2025-03-23T05:46:43.171986",
+      "action": {
+        "type": "click",
+        "target": "text=View Details"
+      },
+      "element": {
+        "tag_name": "a",
+        "text": "View Details",
+        "is_displayed": true,
+        "is_enabled": true,
+        "location": {
+          "x": 296,
+          "y": 1533
+        },
+        "size": {
+          "height": 40,
+          "width": 395
+        },
+        "attributes": {
+          "class": "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full mt-2",
+          "href": "https://aartisan-genesis-concert-ticketing.vercel.app/events/1"
+        },
+        "selector": "xpath=//a[contains(text(), 'View Details')]",
+        "innerHTML": "View Details",
+        "accessibility": {}
+      },
+      "selection_method": 3
+    }
+  ],
+  "has_aartisan": false
+}

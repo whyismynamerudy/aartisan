@@ -70,12 +70,6 @@ class StandardizedAIWebAgent:
         else:
             raise ValueError("Unsupported provider. Please choose either 'gemini' or 'cohere'.")
         
-        # self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        # if not self.api_key:
-        #     raise ValueError("OpenAI API key must be provided")
-        
-        # self.client = openai.OpenAI(api_key=self.api_key)
-        # self.model = model
         self.timeout = timeout
         self.max_retries = max_retries
         self.debug = debug
@@ -1155,6 +1149,11 @@ Generate a detailed, well-formatted response that fulfills the task requirements
                 self.metrics["total_tokens"]["completion"] += response.usage.tokens.output_tokens
                 self.metrics["total_tokens"]["total"] += response.usage.tokens.input_tokens + response.usage.tokens.output_tokens
                 
+                # Extract the content
+                if response and response.message and response.message.content:
+                    generated_content = response.message.content[0].text
+                else:
+                    generated_content = "No content available"
 
             elif self.provider == "gemini":
                 response = self.client.generate_content(
@@ -1166,14 +1165,12 @@ Generate a detailed, well-formatted response that fulfills the task requirements
                 self.metrics["total_tokens"]["prompt"] += response.usage_metadata.prompt_token_count
                 self.metrics["total_tokens"]["completion"] += response.usage_metadata.candidates_token_count
                 self.metrics["total_tokens"]["total"] += response.usage_metadata.total_token_count
-
             
-            # Extract the content from the 'candidates' list (as per your provided structure)
-            # Ensure there is at least one candidate and that it contains the correct 'content'
-            if response and response.candidates:
-                generated_content = response.candidates[0].content.parts[0].text
-            else:
-                generated_content = "No content available"
+                # Extract the content
+                if response and response.candidates:
+                    generated_content = response.candidates[0].content.parts[0].text
+                else:
+                    generated_content = "No content available"
             
             self.log(f"Generated content of length: {len(generated_content)}")
             return generated_content
@@ -1290,7 +1287,13 @@ Be clear, precise, and focus on completing the task efficiently."""
                     self.metrics["total_tokens"]["prompt"] += response.usage.tokens.input_tokens
                     self.metrics["total_tokens"]["completion"] += response.usage.tokens.output_tokens
                     self.metrics["total_tokens"]["total"] += response.usage.tokens.input_tokens + response.usage.tokens.output_tokens
-                
+
+                    # Extract the content
+                    if response and response.message and response.message.content:
+                        content = response.message.content[0].text
+                    else:
+                        content = "No content available"
+
                 elif self.provider == "gemini":
                     response = self.client.generate_content(
                         [msg["content"] for msg in messages],
@@ -1302,12 +1305,11 @@ Be clear, precise, and focus on completing the task efficiently."""
                     self.metrics["total_tokens"]["completion"] += response.usage_metadata.candidates_token_count
                     self.metrics["total_tokens"]["total"] += response.usage_metadata.total_token_count
 
-                # Extract the content from the 'ca  ndidates' list (as per your provided structure)
-                # Ensure there is at least one candidate and that it contains the correct 'content'
-                if response and response.candidates:
-                    content = response.candidates[0].content.parts[0].text
-                else:
-                    content = "No content available"
+                    # Extract the content
+                    if response and response.candidates:
+                        content = response.candidates[0].content.parts[0].text
+                    else:
+                        content = "No content available"
 
                 # Return the content
                 return content
