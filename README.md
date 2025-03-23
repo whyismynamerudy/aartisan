@@ -267,6 +267,10 @@ function ProductDetails({ product, onAddToCart }) {
   );
 }
 ```
+## ⭐️ Performance Improvement 
+We've run experiments using Gemini-2.0-Flash and Cohere command-a-03-2025 models on multiple tasks using the concert ticketing template web app. The raw experiment results can be found in the experiment directory, and the visualizations of the aggregate results below illustrate substantial improvements in the AI agents' task completion performance on the web app under the Aartisan framework.
+
+![image](https://github.com/user-attachments/assets/98956d4b-f5cb-4ce6-8f87-3a62194df571)
 
 ## 📚 Documentation
 
