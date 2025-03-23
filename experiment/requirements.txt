@@ -1,0 +1,5 @@
+cohere
+google-generativeai
+requests
+argparse
+selenium
