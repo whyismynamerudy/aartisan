@@ -69,7 +69,7 @@ class StandardizedAIWebAgent:
 
         else:
             raise ValueError("Unsupported provider. Please choose either 'gemini' or 'cohere'.")
-
+        
         # self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
         # if not self.api_key:
         #     raise ValueError("OpenAI API key must be provided")
@@ -116,7 +116,8 @@ class StandardizedAIWebAgent:
             "interaction_mode": self.interaction_mode,
             "is_content_generation": self.content_generation,
             "collected_content": "",
-            "generated_content": None
+            "generated_content": None,
+            "element_inspections": []  # New field to track element inspections
         }
     
     def __del__(self):
@@ -156,12 +157,84 @@ class StandardizedAIWebAgent:
         if len(artisan_elements) > 0:
             enhanced = True
             self.metrics["interactive_elements_count"] = len(artisan_elements)
+            
+            # Log the first few Aartisan elements to understand what's available
+            self.log(f"Found {len(artisan_elements)} Aartisan-enhanced elements")
+            for i, elem in enumerate(artisan_elements[:5]):  # Log up to 5 elements
+                elem_info = self._inspect_element(elem)
+                self.log(f"Aartisan Element {i+1}: {json.dumps(elem_info, indent=2)}")
         
         # Update metrics
         self.metrics["detection_time"] = time.time() - detection_start
         self.metrics["has_aartisan"] = enhanced
         self.log(f"Aartisan enhancement detected: {enhanced}")
         return enhanced
+    
+    def _inspect_element(self, element) -> Dict[str, Any]:
+        """
+        Inspect a web element and return a dictionary with its attributes and properties.
+        
+        Args:
+            element: WebElement to inspect
+            
+        Returns:
+            dict: Element properties and attributes
+        """
+        try:
+            # Get basic properties
+            element_info = {
+                "tag_name": element.tag_name,
+                "text": element.text.strip() if element.text else "",
+                "is_displayed": element.is_displayed(),
+                "is_enabled": element.is_enabled(),
+                "location": element.location,
+                "size": element.size,
+                "attributes": {}
+            }
+            
+            # Get all attributes (standard)
+            for attr in ["id", "class", "name", "type", "value", "href", "src", "alt", "title", "placeholder"]:
+                value = element.get_attribute(attr)
+                if value:
+                    element_info["attributes"][attr] = value
+            
+            # Get Aartisan-specific attributes
+            aartisan_attrs = [
+                "data-aartisan", "data-aartisan-id", "data-aartisan-name", "data-aartisan-purpose",
+                "data-aartisan-interaction", "data-aartisan-description", "data-aartisan-importance",
+                "data-aartisan-content-type", "data-aartisan-group", "data-aartisan-component"
+            ]
+            
+            for attr in aartisan_attrs:
+                value = element.get_attribute(attr)
+                if value:
+                    element_info["attributes"][attr] = value
+            
+            # Get computed selector
+            element_info["selector"] = self._generate_selector(element)
+            
+            # Get innerHTML (truncated if too large)
+            innerHTML = element.get_attribute("innerHTML")
+            if innerHTML:
+                if len(innerHTML) > 500:
+                    element_info["innerHTML"] = innerHTML[:500] + "... [truncated]"
+                else:
+                    element_info["innerHTML"] = innerHTML
+            
+            # Get computed accessibility information
+            element_info["accessibility"] = {
+                "aria-label": element.get_attribute("aria-label"),
+                "aria-role": element.get_attribute("role"),
+                "aria-hidden": element.get_attribute("aria-hidden")
+            }
+            
+            # Filter out None values
+            element_info["accessibility"] = {k: v for k, v in element_info["accessibility"].items() if v}
+            
+            return element_info
+        except Exception as e:
+            self.log(f"Error inspecting element: {e}")
+            return {"error": str(e)}
 
     def navigate_to(self, url: str) -> bool:
         """
@@ -298,38 +371,32 @@ class StandardizedAIWebAgent:
             "[data-aartisan-importance]", "[data-aartisan-content-type]", "[data-aartisan-group]"
         ]
         
+        # Find all interactive elements (regardless of enhancement)
+        interactive_selectors = "button, a, input, select, textarea, [role=button], [tabindex]"
+        
+        # First try to get enhanced interactive elements
         elements = self.driver.find_elements(By.CSS_SELECTOR, ", ".join(selectors))
+        
+        # If no enhanced elements found, fall back to regular interactive elements
+        if not elements:
+            elements = self.driver.find_elements(By.CSS_SELECTOR, interactive_selectors)
+        
         artisan_elements = []
         for element in elements:
             try:
-                # Extract relevant Aartisan attributes and additional info
-                element_info = {
-                    "tag": element.tag_name,
-                    "text": element.text.strip() if element.text else "",
-                    "id": element.get_attribute("data-aartisan-id"),
-                    "name": element.get_attribute("data-aartisan-name"),
-                    "purpose": element.get_attribute("data-aartisan-purpose"),
-                    "interaction": element.get_attribute("data-aartisan-interaction"),
-                    "description": element.get_attribute("data-aartisan-description"),
-                    "importance": element.get_attribute("data-aartisan-importance"),
-                    "content_type": element.get_attribute("data-aartisan-content-type"),
-                    "group": element.get_attribute("data-aartisan-group"),
-                    "selector": self._generate_selector(element)
-                }
-
-                # # Also collect AI optimizer attributes if present (for informational purposes only)
-                # aartisan_purpose = element.get_attribute("data-aartisan-purpose")
-                # ai_action = element.get_attribute("data-ai-action")
-                # ai_description = element.get_attribute("data-ai-description")
+                # Get detailed element information
+                element_info = self._inspect_element(element)
                 
-                # if aartisan_purpose:
-                #     element_info["aartisan_purpose"] = aartisan_purpose
-                # if ai_action:
-                #     element_info["ai_action"] = ai_action
-                # if ai_description:
-                #     element_info["ai_description"] = ai_description
+                # Add to list, keeping only non-empty values
+                filtered_info = {}
+                for k, v in element_info.items():
+                    if v and k != "innerHTML":  # Skip innerHTML to keep the output cleaner
+                        if isinstance(v, dict):
+                            filtered_info[k] = {k2: v2 for k2, v2 in v.items() if v2}
+                        else:
+                            filtered_info[k] = v
                 
-                artisan_elements.append({k: v for k, v in element_info.items() if v})
+                artisan_elements.append(filtered_info)
             except:
                 pass
         
@@ -339,7 +406,7 @@ class StandardizedAIWebAgent:
             "title": title,
             "url": url,
             "meta_description": meta_description,
-            "has_ai_optimizer": self.metrics["has_ai_optimizer"],
+            "has_ai_optimizer": self.metrics["has_aartisan"],
             "main_content_sample": main_content[:2000],  # First 2000 chars as sample
             "interactive_elements": artisan_elements[:50],  # Limit to 50 elements
             "interactive_elements_count": len(artisan_elements)
@@ -425,7 +492,7 @@ class StandardizedAIWebAgent:
 
     def execute_action(self, action: Dict[str, str]) -> bool:
         """
-        Execute an action on the page consistently for all pages.
+        Execute an action on the page with improved element selection.
         
         Args:
             action: Dictionary containing action details:
@@ -441,7 +508,7 @@ class StandardizedAIWebAgent:
         value = action.get("value", "")
         
         self.log(f"Executing action: {action_type} on {target}" + 
-                 (f" with value {value}" if value else ""))
+                (f" with value {value}" if value else ""))
         
         self.metrics["actions_performed"].append(action)
         self.metrics["steps_taken"] += 1
@@ -463,36 +530,79 @@ class StandardizedAIWebAgent:
                 return self.navigate_to(target)
             return False
         
-        # Find the element using the standardized approach
+        # Find the element using multiple strategies
         element = None
-        try:
-            if target.startswith("xpath="):
-                element = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, target[6:]))
-                )
-            else:
-                element = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, target))
-                )
-        except Exception as e:
-            self.metrics["errors"].append(f"Element not found: {target}, Error: {str(e)}")
-            self.log(f"Error finding element {target}: {e}")
-            
-            # Try finding by text as fallback
-            try:
-                if not target.startswith("xpath="):
-                    element = WebDriverWait(self.driver, 5).until(
-                        EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), '{target}')]"))
-                    )
-            except:
-                return False
+        error_messages = []
         
+        # Try a series of different selection strategies
+        selection_strategies = [
+            # 1. Try directly with the provided selector
+            lambda: self._try_find_element(target),
+            
+            # 2. For text-based targets, try various XPath approaches
+            lambda: self._try_find_element_by_text(target),
+            
+            # 3. Use partial text matching for longer texts
+            lambda: self._try_find_element_by_partial_text(target),
+            
+            # 4. Try finding by visible content
+            lambda: self._try_find_element_by_visible_content(target),
+            
+            # 5. Try finding elements with data-aartisan attributes containing the target text
+            lambda: self._try_find_element_by_aartisan_containing(target),
+            
+            # 6. If it has "View Details" or similar button text, try finding those near target text
+            lambda: self._try_find_related_action_button(target, "View Details"),
+            lambda: self._try_find_related_action_button(target, "Book"),
+            lambda: self._try_find_related_action_button(target, "Select"),
+        ]
+        
+        # Try each strategy until we find an element
+        for i, strategy in enumerate(selection_strategies):
+            try:
+                potential_element = strategy()
+                if potential_element:
+                    element = potential_element
+                    self.log(f"Found element using strategy {i+1}")
+                    break
+            except Exception as e:
+                error_message = f"Selection strategy {i+1} failed: {str(e)}"
+                error_messages.append(error_message)
+                self.log(error_message)
+        
+        # If we found an element, execute the action
         if element:
             try:
+                # Log detailed information about the found element
+                element_inspection = self._inspect_element(element)
+                self.metrics["element_inspections"].append({
+                    "timestamp": datetime.now().isoformat(),
+                    "action": action,
+                    "element": element_inspection,
+                    "selection_method": i+1 if 'i' in locals() else "unknown"
+                })
+                
+                # Log element details for debugging
+                self.log(f"Using element for {action_type}:")
+                self.log(f"Tag: {element_inspection.get('tag_name')}")
+                self.log(f"Text: {element_inspection.get('text')}")
+                
                 # Execute the action
                 if action_type == "click":
+                    # Scroll element into view
+                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", element)
+                    time.sleep(0.7)  # Wait for scroll
+                    
+                    # Highlight element before clicking
+                    self.driver.execute_script("""
+                        original_style = arguments[0].getAttribute('style') || '';
+                        arguments[0].setAttribute('style', original_style + '; border: 3px solid red; background: rgba(255,0,0,0.1); transition: all 0.3s;');
+                    """, element)
+                    time.sleep(0.5)  # Brief pause to see highlighting
+                    
+                    # Click the element
                     element.click()
-                    time.sleep(1)  # Fixed wait time for all actions
+                    time.sleep(1.5)  # Slightly longer wait after click
                     
                     # For content generation, collect content after navigation
                     if self.content_generation:
@@ -501,15 +611,41 @@ class StandardizedAIWebAgent:
                     return True
                 
                 elif action_type == "input":
+                    # Scroll element into view
+                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", element)
+                    time.sleep(0.5)  # Wait for scroll
+                    
+                    # Highlight element
+                    self.driver.execute_script("""
+                        original_style = arguments[0].getAttribute('style') || '';
+                        arguments[0].setAttribute('style', original_style + '; border: 3px solid blue; background: rgba(0,0,255,0.1); transition: all 0.3s;');
+                    """, element)
+                    time.sleep(0.3)
+                    
+                    # Clear and input text
                     element.clear()
                     element.send_keys(value)
+                    time.sleep(0.3)  # Wait briefly after input
                     return True
                 
                 elif action_type == "select":
                     if element.tag_name == "select":
                         from selenium.webdriver.support.ui import Select
+                        
+                        # Scroll element into view
+                        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", element)
+                        time.sleep(0.5)
+                        
+                        # Highlight element
+                        self.driver.execute_script("""
+                            original_style = arguments[0].getAttribute('style') || '';
+                            arguments[0].setAttribute('style', original_style + '; border: 3px solid green; background: rgba(0,255,0,0.1); transition: all 0.3s;');
+                        """, element)
+                        time.sleep(0.3)
+                        
                         select = Select(element)
                         select.select_by_visible_text(value)
+                        time.sleep(0.3)  # Wait briefly after selection
                         return True
                 
                 else:
@@ -520,9 +656,191 @@ class StandardizedAIWebAgent:
             except Exception as e:
                 self.metrics["errors"].append(f"Error executing {action_type} on {target}: {str(e)}")
                 self.log(f"Error executing action: {e}")
+                traceback.print_exc()  # Print full traceback for debugging
                 return False
         
+        # If we couldn't find the element, log the error
+        self.metrics["errors"].append(f"Element not found using any strategy: {target}")
+        self.log(f"Failed to find element: {target}")
+        self.log(f"Attempted strategies failed with: {error_messages}")
         return False
+
+    def _try_find_element(self, target, timeout=5):
+        """Try to find an element with the given target selector."""
+        try:
+            if target.startswith("xpath="):
+                return WebDriverWait(self.driver, timeout).until(
+                    EC.element_to_be_clickable((By.XPATH, target[6:]))
+                )
+            else:
+                return WebDriverWait(self.driver, timeout).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, target))
+                )
+        except:
+            return None
+
+    def _try_find_element_by_text(self, text, timeout=5):
+        """Try to find an element containing the exact text."""
+        try:
+            # Try exact match with various elements that commonly contain text
+            for tag in ['a', 'button', 'div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'li']:
+                xpath = f"//*/text()[normalize-space(.)='{text}']/parent::{tag}"
+                element = WebDriverWait(self.driver, 1).until(
+                    EC.element_to_be_clickable((By.XPATH, xpath))
+                )
+                if element:
+                    return element
+            
+            # Try with text content
+            return WebDriverWait(self.driver, timeout).until(
+                EC.element_to_be_clickable((By.XPATH, f"//*[contains(text(), '{text}')]"))
+            )
+        except:
+            return None
+
+    def _try_find_element_by_partial_text(self, text, timeout=3):
+        """Try to find an element containing part of the text."""
+        try:
+            # For longer texts, break it up and look for significant parts
+            words = text.split()
+            if len(words) > 3:
+                # Try with just the first few significant words
+                significant_part = ' '.join(words[:3])
+                
+                # Look for this partial match
+                return WebDriverWait(self.driver, timeout).until(
+                    EC.element_to_be_clickable((By.XPATH, f"//*[contains(text(), '{significant_part}')]"))
+                )
+                
+            # If that didn't work, try looking for any keyword that might be distinctive
+            distinctive_keywords = [word for word in words if len(word) > 5]  # Longer words tend to be more distinctive
+            
+            for keyword in distinctive_keywords:
+                try:
+                    element = WebDriverWait(self.driver, 1).until(
+                        EC.element_to_be_clickable((By.XPATH, f"//*[contains(text(), '{keyword}')]"))
+                    )
+                    if element:
+                        return element
+                except:
+                    continue
+            
+            return None
+        except:
+            return None
+
+    def _try_find_element_by_visible_content(self, text, timeout=3):
+        """Try to find a visible element with content similar to the target."""
+        try:
+            # Use JavaScript to find elements by their visible text content
+            # This is more reliable than XPath text searching in some cases
+            script = """
+            function findElementByVisibleText(searchText) {
+                searchText = searchText.toLowerCase();
+                let elements = document.querySelectorAll('a, button, div, span, p, h1, h2, h3, h4, li');
+                
+                for (let elem of elements) {
+                    if (elem.offsetParent !== null) { // Check if visible
+                        let content = elem.textContent.toLowerCase();
+                        if (content.includes(searchText)) {
+                            return elem;
+                        }
+                    }
+                }
+                return null;
+            }
+            return findElementByVisibleText(arguments[0]);
+            """
+            
+            element = self.driver.execute_script(script, text)
+            return element
+        except:
+            return None
+
+    def _try_find_element_by_aartisan_containing(self, text, timeout=3):
+        """Try to find elements with aartisan attributes that contain the target text."""
+        try:
+            # Find all elements with data-aartisan attributes
+            aartisan_elements = self.driver.find_elements(By.CSS_SELECTOR, "[data-aartisan]")
+            
+            # Check each element for containing the target text
+            for elem in aartisan_elements:
+                if text.lower() in elem.text.lower():
+                    return elem
+                
+                # Check child elements too
+                children = elem.find_elements(By.XPATH, ".//*")
+                for child in children:
+                    if text.lower() in child.text.lower():
+                        return child
+            
+            return None
+        except:
+            return None
+
+    def _try_find_related_action_button(self, text, button_text="View Details", timeout=3):
+        """Try to find action buttons related to text content."""
+        try:
+            # Strategy 1: Find buttons near text
+            xpath = f"//*/text()[contains(normalize-space(.), '{text}')]/ancestor::*[position() <= 3]//button[contains(text(), '{button_text}')] | //*/text()[contains(normalize-space(.), '{text}')]/ancestor::*[position() <= 3]//a[contains(text(), '{button_text}')]"
+            
+            element = WebDriverWait(self.driver, 1).until(
+                EC.element_to_be_clickable((By.XPATH, xpath))
+            )
+            
+            if element:
+                return element
+            
+            # Strategy 2: Find nearby elements with common button classes
+            script = """
+            function findRelatedButton(searchText, buttonText) {
+                searchText = searchText.toLowerCase();
+                buttonText = buttonText.toLowerCase();
+                
+                // Find all elements containing the search text
+                let containers = [];
+                let allElements = document.querySelectorAll('*');
+                
+                for (let elem of allElements) {
+                    if (elem.textContent.toLowerCase().includes(searchText)) {
+                        containers.push(elem);
+                    }
+                }
+                
+                // For each container, find buttons or links
+                for (let container of containers) {
+                    // Check direct buttons/links
+                    let buttons = container.querySelectorAll('button, a, [role="button"]');
+                    for (let button of buttons) {
+                        if (button.textContent.toLowerCase().includes(buttonText)) {
+                            return button;
+                        }
+                    }
+                    
+                    // Check parent elements
+                    let parent = container.parentElement;
+                    for (let i = 0; i < 3 && parent; i++) {
+                        buttons = parent.querySelectorAll('button, a, [role="button"]');
+                        for (let button of buttons) {
+                            if (button.textContent.toLowerCase().includes(buttonText)) {
+                                return button;
+                            }
+                        }
+                        parent = parent.parentElement;
+                    }
+                }
+                
+                return null;
+            }
+            
+            return findRelatedButton(arguments[0], arguments[1]);
+            """
+            
+            element = self.driver.execute_script(script, text, button_text)
+            return element
+            
+        except:
+            return None
 
     def execute_task(self, task: str, url: str) -> Tuple[bool, Dict[str, Any]]:
         """
@@ -567,7 +885,8 @@ class StandardizedAIWebAgent:
             "url": url,
             "result": None,
             "collected_content": "",
-            "generated_content": None
+            "generated_content": None,
+            "element_inspections": []
         }
         
         self.log(f"Starting task: {task}")
@@ -591,25 +910,94 @@ class StandardizedAIWebAgent:
             return True, self.metrics
         
         # Step 2: Initialize conversation with the AI
-        system_prompt = self._get_system_prompt()
         
+        # Use a production-style system prompt that doesn't mention any specific technologies
+        if self.content_generation:
+            system_prompt = """You are an intelligent web assistant that helps users extract and summarize information from websites. 
+    Your goal is to navigate through pages, locate relevant information, and compile it into well-structured content.
+
+    For each step, you will:
+    1. Analyze the current webpage structure and content
+    2. Determine the most relevant information related to the user's request
+    3. Navigate to new pages if necessary to gather more information
+    4. Provide clear, structured actions in JSON format
+
+    Respond with actions in this format:
+    ```json
+    {
+    "type": "click|input|select|navigate|collect",
+    "target": "<css_selector_or_url>",
+    "value": "<value_for_input>" (for input/select actions only)
+    }
+    ```
+
+    Once you have all the necessary information, respond with:
+    ```
+    TASK COMPLETE
+    Result: <summary of your findings>
+    ```
+
+    Be efficient, accurate, and focus on delivering high-quality information that addresses the user's specific needs."""
+        else:
+            system_prompt = """You are an intelligent web assistant that helps users accomplish tasks on websites.
+    Your goal is to help navigate and interact with web interfaces to complete specific objectives.
+
+    For each step, you will:
+    1. Analyze the current webpage structure and interface elements
+    2. Determine the most logical next action based on the task goal
+    3. Provide clear, structured actions in JSON format
+
+    Respond with actions in this format:
+    ```json
+    {
+    "type": "click|input|select|navigate",
+    "target": "<css_selector_or_xpath>",
+    "value": "<value_for_input>" (for input/select actions only)
+    }
+    ```
+
+    For element identifiers, use:
+    - CSS selectors (e.g., "#submit-button", ".nav-link")
+    - XPath expressions (prefixed with "xpath=")
+    - Text content directly when appropriate
+
+    Once the task is complete, respond with:
+    ```
+    TASK COMPLETE
+    Result: <description of what was accomplished>
+    ```
+
+    Be efficient, precise, and reliable in completing the user's task."""
+        
+        # Initial user message describes the task without mentioning any specific technologies
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"I need to perform the following task on a website: {task}\n\nThe website is at {url}.\n\nPlease help me accomplish this task using Aartisan semantic context."}
+            {"role": "user", "content": f"I need to perform this task on a website: {task}\n\nThe website URL is: {url}\n\nPlease guide me through completing this step by step."}
         ]
         
         # Main interaction loop
-        max_iterations = 15  # Prevent infinite loops
+        max_iterations = 25  # Prevent infinite loops
         for iteration in range(max_iterations):
             self.log(f"Iteration {iteration + 1}/{max_iterations}")
             
             # Get the current page state
             page_content = self.get_page_content()
             
-            # Add page content to the conversation
+            # Add page content to the conversation in a clean, production-ready format
+            # Focus on essential information about the page and available UI elements
             messages.append({
                 "role": "user", 
-                "content": f"Here's the current state of the webpage:\n\n{json.dumps(page_content, indent=2)}\n\nWhat should I do next?"
+                "content": f"""Current page information:
+    - Title: {page_content['title']}
+    - URL: {page_content['url']}
+    - Description: {page_content['meta_description'][:150] + '...' if len(page_content['meta_description']) > 150 else page_content['meta_description']}
+
+    There are {page_content['interactive_elements_count']} interactive elements on this page.
+
+    Here are the elements you can interact with:
+    {json.dumps(page_content['interactive_elements'], indent=2)}
+
+    What action should I take next to accomplish the task?"""
             })
             
             # Get AI response
@@ -639,19 +1027,22 @@ class StandardizedAIWebAgent:
                 success = self.execute_action(action)
                 
                 if success:
+                    # Simple, clean confirmation that doesn't reveal implementation details
                     messages.append({
                         "role": "user", 
-                        "content": f"Action executed successfully: {json.dumps(action)}"
+                        "content": f"Action completed: {action['type']} on {action['target']}" + (f" with value: {action['value']}" if action.get('value') else "")
                     })
                 else:
+                    # Provide helpful error feedback without revealing implementation
                     messages.append({
                         "role": "user", 
-                        "content": f"Failed to execute action: {json.dumps(action)}. Please try a different approach."
+                        "content": f"Unable to perform the action: {action['type']} on {action['target']}. The element might not be visible, clickable, or may not exist. Please try a different approach."
                     })
             else:
+                # Guide the AI to provide properly formatted actions
                 messages.append({
                     "role": "user", 
-                    "content": "I couldn't understand the action to take. Please provide a clear, structured action in JSON format."
+                    "content": "I need a clear action to take. Please provide a specific instruction in JSON format with 'type' and 'target' fields."
                 })
         
         # Check if we reached the iteration limit
