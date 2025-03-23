@@ -1,0 +1,15 @@
+{
+    "name": "Concert Ticketing Template",
+    "description": "A website for purchasing tickets for concerts",
+    "version": "0.1.0",
+    "author": "Aartisan Team",
+    "features": [
+      "react",
+      "typescript",
+      "vite",
+      "tailwindcss",
+      "react-router",
+      "aartisan-provider",
+      "ai-metadata"
+    ]
+  }
