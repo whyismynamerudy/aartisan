@@ -1,14 +1,16 @@
 import '@babel/core';
 import * as parser from '@babel/parser';
-import traverse from '@babel/traverse';
+import * as traverseModule from '@babel/traverse';
 import * as t from '@babel/types';
-import generate from '@babel/generator';
+import * as generateModule from '@babel/generator';
 import path from 'path';
 import fs from 'fs-extra';
 
 /**
  * aartisan - JSX transformation utilities
  */
+const traverse = traverseModule.default || traverseModule;
+const generate = generateModule.default || generateModule;
 
 /**
  * Transforms JSX code for AI optimization
@@ -28,7 +30,7 @@ async function transformJSX(code, fileName, options) {
   const metadata = [];
 
   // Traverse the AST
-  traverse.default(ast, {
+  traverse(ast, {
     // Find component declarations
     FunctionDeclaration(path) {
       if (isReactComponent(path)) {
@@ -56,7 +58,7 @@ async function transformJSX(code, fileName, options) {
   });
 
   // Generate the transformed code
-  const output = generate.default(ast, {
+  const output = generate(ast, {
     retainLines: true,
     comments: true
   }, code);

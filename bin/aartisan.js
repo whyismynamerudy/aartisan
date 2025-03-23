@@ -3,20 +3,38 @@
 import chalk from 'chalk';
 import figlet from 'figlet';
 import { program } from 'commander';
-import { createCommand } from '../src/cli/commands/create.js';
-import { analyzeCommand } from '../src/cli/commands/analyze.js';
-import { portCommand } from '../src/cli/commands/port.js';
+import { createCommand } from '../dist/cli/commands/create.js';
+import { analyzeCommand } from '../dist/cli/commands/analyze.js';
+import { portCommand } from '../dist/cli/commands/port.js';
 
-// Display ASCII art banner
-console.log(
-  chalk.cyan(
-    figlet.textSync('Aartisan', {
-      font: 'Big',
-      horizontalLayout: 'default',
-      verticalLayout: 'default',
-    })
-  )
-);
+// Display ASCII art banner with neon green to purple gradient
+const asciiArt = figlet.textSync('Aartisan', {
+  font: 'Big',
+  horizontalLayout: 'default',
+  verticalLayout: 'default',
+});
+
+// Create gradient effect by coloring each line
+const lines = asciiArt.split('\n');
+const totalLines = lines.length;
+
+const gradientBanner = lines.map((line, index) => {
+  // Calculate position in the gradient from 0 to 1
+  const pos = index / (totalLines - 1);
+  
+  // Interpolate between neon green and purple
+  // Neon green: RGB(57, 255, 20)
+  // Purple: RGB(177, 13, 201)
+  
+  // Simple linear interpolation between colors
+  const r = Math.round(57 + (177 - 57) * pos);
+  const g = Math.round(255 + (13 - 255) * pos);
+  const b = Math.round(20 + (201 - 20) * pos);
+  
+  return chalk.rgb(r, g, b)(line);
+}).join('\n');
+
+console.log(gradientBanner);
 
 console.log(chalk.cyan('\n📦 AI Agent Toolkit for React - Create AI-optimized React apps\n'));
 

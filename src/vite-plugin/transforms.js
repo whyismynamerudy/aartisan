@@ -3,9 +3,11 @@
  */
 import * as babel from '@babel/core';
 import * as parser from '@babel/parser';
-import traverse from '@babel/traverse';
+import * as traverseModule from '@babel/traverse';
 import * as t from '@babel/types';
-import generate from '@babel/generator';
+import * as generateModule from '@babel/generator';
+const traverse = traverseModule.default || traverseModule;
+const generate = generateModule.default || generateModule;
 import path from 'path';
 import fs from 'fs-extra';
 
@@ -27,7 +29,7 @@ export async function transformJSX(code, fileName, options) {
   const metadata = [];
   
   // Traverse the AST
-  traverse.default(ast, {
+  traverse(ast, {
     // Find component declarations
     FunctionDeclaration(path) {
       if (isReactComponent(path)) {
@@ -55,7 +57,7 @@ export async function transformJSX(code, fileName, options) {
   });
   
   // Generate the transformed code
-  const output = generate.default(ast, {
+  const output = generate(ast, {
     retainLines: true,
     comments: true
   }, code);
