@@ -6,6 +6,7 @@ import { program } from 'commander';
 import { createCommand } from '../dist/cli/commands/create.js';
 import { analyzeCommand } from '../dist/cli/commands/analyze.js';
 import { portCommand } from '../dist/cli/commands/port.js';
+import { annotateCommand } from '../dist/cli/commands/annotate.js';
 
 // Display ASCII art banner with neon green to purple gradient
 const asciiArt = figlet.textSync('Aartisan', {
@@ -48,6 +49,7 @@ program
 createCommand(program);
 analyzeCommand(program);
 portCommand(program);
+annotateCommand(program);
 
 // Display help by default if no command is provided
 if (process.argv.length <= 2) {

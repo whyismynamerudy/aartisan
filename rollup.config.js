@@ -181,8 +181,10 @@ export default [
       'cli/commands/create': 'src/cli/commands/create.js',
       'cli/commands/analyze': 'src/cli/commands/analyze.js',
       'cli/commands/port': 'src/cli/commands/port.js',
+      'cli/commands/annotate': 'src/cli/commands/annotate.js',
       'cli/utils/project': 'src/cli/utils/project.js',
-      'cli/utils/templates': 'src/cli/utils/templates.js'
+      'cli/utils/templates': 'src/cli/utils/templates.js',
+      'cli/utils/llm-providers': 'src/cli/utils/llm-providers.js',
     },
     output: {
       dir: 'dist',
