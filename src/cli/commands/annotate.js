@@ -29,7 +29,8 @@ export function annotateCommand(program) {
     .description('Enhance components with LLM-powered semantic analysis')
     .argument('[source]', 'Path to source directory to analyze', '.')
     .option('-p, --provider <provider>', 'LLM provider to use (cohere, gemini)', 'cohere')
-    .option('-k, --api-key <key>', 'API key for the LLM provider')
+    .option('-k, --api-key <key>', 'API key for the LLM provider (Cohere)')
+    .option('-g, --gemini-api-key <key>', 'API key for the Gemini provider')
     .option('-v, --verbose', 'Enable verbose logging')
     .option('-d, --dry-run', 'Show the proposed changes without applying them')
     .action(async (source, options) => {
@@ -49,21 +50,45 @@ export function annotateCommand(program) {
           process.exit(1);
         }
         
-        // Check for API key
-        if (!options.apiKey) {
-          console.log(chalk.blue('[DEBUG] No API key provided via command line, checking environment variables'));
-          // Try to read from environment variable based on provider
-          const envKey = options.provider === 'cohere' 
-            ? process.env.COHERE_API_KEY 
-            : process.env.GEMINI_API_KEY;
-          
-          if (envKey) {
-            options.apiKey = envKey;
-            console.log(chalk.blue(`[DEBUG] Found API key in environment variable ${options.provider === 'cohere' ? 'COHERE_API_KEY' : 'GEMINI_API_KEY'}`));
-          } else {
-            console.error(chalk.red(`Error: No API key provided for ${options.provider} and none found in environment variables`));
-            console.log(`You can provide an API key using the --api-key option or by setting the ${options.provider === 'cohere' ? 'COHERE_API_KEY' : 'GEMINI_API_KEY'} environment variable.`);
-            process.exit(1);
+        // Handle provider-specific API keys
+        if (options.provider === 'gemini') {
+          // For Gemini provider
+          if (!options.geminiApiKey && !options.apiKey) {
+            console.log(chalk.blue('[DEBUG] No Gemini API key provided via command line, checking environment variables'));
+            // Try to read from environment variable
+            const envKey = process.env.GEMINI_API_KEY;
+            
+            if (envKey) {
+              options.geminiApiKey = envKey;
+              console.log(chalk.blue(`[DEBUG] Found Gemini API key in environment variable GEMINI_API_KEY`));
+            } else {
+              console.error(chalk.red(`Error: No API key provided for Gemini and none found in environment variables`));
+              console.log(`You can provide a Gemini API key using the --gemini-api-key option or by setting the GEMINI_API_KEY environment variable.`);
+              process.exit(1);
+            }
+          } else if (options.geminiApiKey) {
+            console.log(chalk.blue('[DEBUG] Using provided --gemini-api-key for Gemini'));
+          } else if (options.apiKey) {
+            console.log(chalk.blue('[DEBUG] Using provided --api-key for Gemini'));
+            options.geminiApiKey = options.apiKey;
+          }
+        } else {
+          // For Cohere provider (default) or any other
+          if (!options.apiKey) {
+            console.log(chalk.blue('[DEBUG] No API key provided via command line, checking environment variables'));
+            // Try to read from environment variable based on provider
+            const envKey = options.provider === 'cohere' 
+              ? process.env.COHERE_API_KEY 
+              : process.env.GEMINI_API_KEY;
+            
+            if (envKey) {
+              options.apiKey = envKey;
+              console.log(chalk.blue(`[DEBUG] Found API key in environment variable ${options.provider === 'cohere' ? 'COHERE_API_KEY' : 'GEMINI_API_KEY'}`));
+            } else {
+              console.error(chalk.red(`Error: No API key provided for ${options.provider} and none found in environment variables`));
+              console.log(`You can provide an API key using the --api-key option or by setting the ${options.provider === 'cohere' ? 'COHERE_API_KEY' : 'GEMINI_API_KEY'} environment variable.`);
+              process.exit(1);
+            }
           }
         }
         
@@ -97,10 +122,13 @@ export function annotateCommand(program) {
           process.exit(0);
         }
         
-        // Validate API key
+        // Validate API key based on provider
         spinner.start('Validating API key...');
         console.log(chalk.blue(`[DEBUG] Validating ${options.provider} API key`));
-        const isValidKey = await validateApiKey(options.provider, options.apiKey);
+        const isValidKey = await validateApiKey(
+          options.provider, 
+          options.provider === 'gemini' ? (options.geminiApiKey || options.apiKey) : options.apiKey
+        );
         if (!isValidKey) {
           spinner.fail(`Invalid API key for ${options.provider}`);
           process.exit(1);
@@ -110,7 +138,21 @@ export function annotateCommand(program) {
         // Gather codebase context for relevant components
         spinner.start('Gathering context from codebase...');
         console.log(chalk.blue('[DEBUG] Starting codebase context gathering'));
-        const contextMap = await gatherCodebaseContext(componentsToAnalyze, componentFiles, options);
+        
+        // Note: For Gemini, we still use Cohere for reranking if a Cohere API key is available
+        // This is because Gemini doesn't have a dedicated reranking API
+        const contextGatheringOptions = { ...options };
+        if (options.provider === 'gemini' && !options.apiKey) {
+          // Try to get Cohere API key from environment for reranking
+          const cohereEnvKey = process.env.COHERE_API_KEY;
+          if (cohereEnvKey) {
+            contextGatheringOptions.apiKey = cohereEnvKey;
+            contextGatheringOptions.provider = 'cohere';
+            console.log(chalk.blue('[DEBUG] Using Cohere API key from environment for context reranking'));
+          }
+        }
+        
+        const contextMap = await gatherCodebaseContext(componentsToAnalyze, componentFiles, contextGatheringOptions);
         spinner.succeed('Gathered contextual information for analysis.');
         
         if (options.verbose) {

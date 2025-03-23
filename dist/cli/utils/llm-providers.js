@@ -18682,8 +18682,7 @@ async function cohereGenerate(prompt, options) {
   console.log(chalk.blue(`[DEBUG] Starting cohereGenerate with prompt length: ${prompt.length} characters`));
   console.log(chalk.blue(`[DEBUG] Prompt first 100 chars: "${prompt.substring(0, 100)}..."`));
   try {
-    console.log(chalk.blue('[DEBUG] Calling Cohere chat API with model: command-r-plus-08-2024'));
-    console.log(chalk.blue('[DEBUG] Max tokens: 4096, Temperature: 0.7'));
+    console.log(chalk.blue('[DEBUG] Calling Cohere chat API with model: command-a-03-2025'));
     const startTime = Date.now();
     const response = await axios({
       method: 'post',
@@ -18694,7 +18693,7 @@ async function cohereGenerate(prompt, options) {
         'Authorization': `Bearer ${options.apiKey}`
       },
       data: {
-        model: 'command-r-plus-08-2024',
+        model: 'command-a-03-2025',
         // Using the latest model from the docs
         messages: [{
           role: 'user',
@@ -18774,6 +18773,10 @@ async function cohereGenerate(prompt, options) {
  */
 async function validateApiKey(provider, apiKey) {
   console.log(chalk.blue(`[DEBUG] Validating API key for ${provider}`));
+  if (!apiKey) {
+    console.error(chalk.red(`[ERROR] No API key provided for ${provider}`));
+    return false;
+  }
   try {
     if (provider === 'cohere') {
       console.log(chalk.blue('[DEBUG] Testing Cohere API key with models endpoint'));
@@ -18795,7 +18798,6 @@ async function validateApiKey(provider, apiKey) {
       return true;
     } else if (provider === 'gemini') {
       console.log(chalk.blue('[DEBUG] Testing Gemini API key with models endpoint'));
-      // Simple validation for Gemini
       const startTime = Date.now();
       const response = await axios({
         method: 'get',
@@ -18807,6 +18809,7 @@ async function validateApiKey(provider, apiKey) {
       });
       const duration = Date.now() - startTime;
       console.log(chalk.green(`[DEBUG] Gemini API key validation successful (${duration}ms)`));
+      console.log(chalk.blue(`[DEBUG] Available models: ${response.data.models ? response.data.models.length : 'unknown'}`));
       return true;
     }
     console.log(chalk.yellow(`[DEBUG] Unknown provider: ${provider}`));
@@ -18869,22 +18872,25 @@ async function enhanceWithLLM(prompt, options) {
 }
 
 /**
- * Generate enhanced component using Google's Gemini API
+ * Generate enhanced component using Gemini API
  * @param {string} prompt - LLM prompt
  * @param {Object} options - Options including API key
  * @returns {Promise<string>} Generated code
  */
 async function geminiGenerate(prompt, options) {
   console.log(chalk.blue(`[DEBUG] Starting geminiGenerate with prompt length: ${prompt.length} characters`));
+  console.log(chalk.blue(`[DEBUG] Prompt first 100 chars: "${prompt.substring(0, 100)}..."`));
   try {
-    console.log(chalk.blue('[DEBUG] Calling Gemini generateContent API with model: gemini-1.5-pro'));
-    console.log(chalk.blue('[DEBUG] Temperature: 0.7, MaxOutputTokens: 4096'));
+    // Determine which API key to use - either geminiApiKey or apiKey
+    const apiKey = options.geminiApiKey || options.apiKey;
+    console.log(chalk.blue('[DEBUG] Calling Gemini generateContent API with model: gemini-2.0-flash'));
+    console.log(chalk.blue('[DEBUG] Temperature: 0.7, MaxOutputTokens: 8192'));
     const startTime = Date.now();
     const response = await axios({
       method: 'post',
-      url: 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent',
+      url: 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent',
       params: {
-        key: options.apiKey
+        key: apiKey
       },
       headers: {
         'Content-Type': 'application/json'
@@ -18897,7 +18903,7 @@ async function geminiGenerate(prompt, options) {
         }],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 4096,
+          maxOutputTokens: 8192,
           topP: 0.95,
           topK: 40
         }
@@ -18933,14 +18939,16 @@ async function geminiGenerate(prompt, options) {
       console.log(chalk.yellow('[DEBUG] No code block detected, using full response'));
     }
     console.log(chalk.blue(`[DEBUG] Extracted code length: ${extractedCode.length} characters`));
+    console.log(chalk.blue(`[DEBUG] First 50 chars of extracted code: "${extractedCode.substring(0, 50)}..."`));
     return extractedCode;
   } catch (error) {
-    console.error(chalk.red(`[ERROR] Gemini API error: ${error.message}`));
+    console.error(chalk.red(`[ERROR] Gemini generate error: ${error.message}`));
     if (error.response) {
       console.error(chalk.red(`[ERROR] Status: ${error.response.status}`));
       console.error(chalk.red(`[ERROR] Response data: ${JSON.stringify(error.response.data)}`));
     } else if (error.request) {
       console.error(chalk.red('[ERROR] No response received from server'));
+      console.error(chalk.red(`[ERROR] Request details: ${error.request}`));
     }
     throw new Error(`Failed to generate with Gemini: ${error.message}`);
   }
