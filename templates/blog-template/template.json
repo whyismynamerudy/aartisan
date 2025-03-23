@@ -1,0 +1,15 @@
+{
+    "name": "Blog Template",
+    "description": "A blog post website",
+    "version": "0.1.0",
+    "author": "Aartisan Team",
+    "features": [
+      "react",
+      "typescript",
+      "vite",
+      "tailwindcss",
+      "react-router",
+      "aartisan-provider",
+      "ai-metadata"
+    ]
+  }
