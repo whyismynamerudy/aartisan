@@ -268,7 +268,7 @@ function ProductDetails({ product, onAddToCart }) {
 }
 ```
 ## ⭐️ Performance Improvement 
-We conducted a series of experiments using the Gemini-2.0-Flash and Cohere Command-A-03-2025 models across multiple tasks on two versions of a concert ticketing web application. The first version was optimized for AI agent interactions using the Aartisan framework, while the second version was built under the regular React framework. The raw results from these experiments are available in the experiment directory.
+We conducted a series of experiments using the Gemini-2.0-Flash and Cohere command-a-03-2025 models across multiple tasks on two versions of a concert ticketing web application. The first version was optimized for AI agent interactions using the Aartisan framework, while the second version was built under the regular React framework. The raw results from these experiments are available in the experiment directory.
 
 The visualizations of the aggregate results, presented below, demonstrate significant improvements in task completion performance by the AI agents on the web app powered by the Aartisan framework compared to the version running on the standard React framework. These findings highlight the effectiveness of the Aartisan framework in enhancing AI-agent interactions and overall task efficiency.
 
