@@ -173,5 +173,47 @@ export default [
         ]
       })
     ]
+  },
+
+  // CLI commands
+  {
+    input: {
+      'cli/commands/create': 'src/cli/commands/create.js',
+      'cli/commands/analyze': 'src/cli/commands/analyze.js',
+      'cli/commands/port': 'src/cli/commands/port.js',
+      'cli/commands/annotate': 'src/cli/commands/annotate.js',
+      'cli/utils/project': 'src/cli/utils/project.js',
+      'cli/utils/templates': 'src/cli/utils/templates.js',
+      'cli/utils/llm-providers': 'src/cli/utils/llm-providers.js',
+    },
+    output: {
+      dir: 'dist',
+      format: 'es',
+      sourcemap: true,
+      entryFileNames: '[name].js'
+    },
+    external: [
+      'path',
+      'fs',
+      'fs-extra',
+      'chalk',
+      'commander',
+      'figlet',
+      'inquirer',
+      'ora',
+      'url'
+    ],
+    plugins: [
+      nodeResolve(),
+      commonjs(),
+      json(),
+      babel({
+        babelHelpers: 'bundled',
+        exclude: 'node_modules/**',
+        presets: [
+          ['@babel/preset-env', { targets: { node: 'current' } }]
+        ]
+      })
+    ]
   }
 ];
