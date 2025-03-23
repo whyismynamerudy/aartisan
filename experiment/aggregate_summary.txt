@@ -1,0 +1,22 @@
+
+    Aggregate Performance Summary Across All Experiments:
+    
+    Average Time Comparison:
+    - Optimized: 93.72 seconds
+    - Regular: 158.78 seconds
+    - Average Improvement: 41.0%
+    
+    Average Steps and API Calls:
+    - Steps (Optimized/Regular): 3.5/11.5
+    - API Calls (Optimized/Regular): 4.5/12.0
+    
+    Average Token Usage:
+    - Optimized: 32,838 tokens
+    - Regular: 746,376 tokens
+    - Average Reduction: 713,538 tokens
+    
+    Average Errors:
+    - Optimized: 3.0 errors
+    - Regular: 6.0 errors
+    - Average Reduction: 3.0 errors
+    

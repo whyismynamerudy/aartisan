@@ -1,0 +1,22 @@
+
+    Performance Summary for comparison_results_standardized:
+    
+    Time Comparison:
+    - Optimized: 104.56 seconds
+    - Regular: 200.22 seconds
+    - Improvement: 47.8%
+    
+    Steps and API Calls:
+    - Steps (Optimized/Regular): 4/15
+    - API Calls (Optimized/Regular): 5/15
+    
+    Token Usage:
+    - Optimized: 41,412 tokens
+    - Regular: 1,077,628 tokens
+    - Reduction: 1,036,216 tokens
+    
+    Errors:
+    - Optimized: 3 errors
+    - Regular: 5 errors
+    - Reduction: 2 errors
+    
