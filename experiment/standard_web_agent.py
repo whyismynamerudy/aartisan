@@ -54,7 +54,7 @@ class StandardizedAIWebAgent:
                 raise ImportError("Cohere package not found. Install it with 'pip install cohere'.")
             self.client = cohere.ClientV2(api_key=self.api_key)
             if not model:
-                self.model = "command-r-08-2024" 
+                self.model = "command-a-03-2025" 
 
         elif self.provider == "gemini":
             self.api_key = api_key or os.environ.get("GEMINI_API_KEY")

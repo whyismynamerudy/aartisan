@@ -1,6 +1,6 @@
 {
   "name": "aartisan",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "AI Agent Toolkit for React - Create React applications optimized for AI interaction",
   "type": "module",
   "main": "dist/index.js",

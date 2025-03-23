@@ -1,16 +1,16 @@
 # Aartisan - AI Agent Toolkit for React
 
-Aartisan (AI Agent Toolkit for React) is a toolkit for creating React applications optimized for AI agent interaction. It helps developers build React apps with semantically enhanced components that are more understandable by AI agents, making them more accessible and navigable.
+Aartisan is a comprehensive toolkit for creating React applications that are optimized for AI agent interaction. It helps developers build semantically enhanced components that are more understandable to AI assistants, making your applications more accessible and navigable for both humans and AI.
 
-## Features
+## 🚀 Features
 
-- 🚀 **CLI for Creating AI-Optimized React Applications**: Quickly scaffold new projects with AI optimization built-in
-- 🧩 **Component Enhancement System**: Multiple approaches to enhance components with semantic metadata
-- 🔌 **Vite Plugin Integration**: Build-time optimization and code transformation
-- 🤖 **LLM Integration**: Automatic component analysis and enhancement (requires API key)
-- 🧠 **Semantic Metadata**: Make your components self-describing for AI assistants
+- **CLI for AI-Optimized React Applications**: Quickly scaffold new projects or enhance existing ones
+- **Component Enhancement System**: Multiple approaches to add semantic metadata to your components
+- **Semantic Understanding**: Make your components self-describing for AI assistants
+- **Vite Plugin Integration**: Build-time optimization and code transformation
+- **LLM Integration**: Optional AI-powered component analysis and enhancement
 
-## Installation
+## 📦 Installation
 
 ```bash
 # Install globally
@@ -20,7 +20,7 @@ npm install -g aartisan
 npx aartisan create my-app
 ```
 
-## Usage
+## 🛠️ Usage
 
 ### Creating a New Project
 
@@ -29,32 +29,33 @@ npx aartisan create my-app
 aartisan create my-app
 
 # Use a specific template
-aartisan create my-app --template e-commerce
-
-# Skip prompts with yes flag
-aartisan create my-app --template minimal --yes
+aartisan create my-app --template minimal
 ```
 
-### Analyzing Existing Components
+### Porting an Existing React App
 
 ```bash
-# Analyze components in a directory
-aartisan analyze src/components
-
-# Specify output format
-aartisan analyze src/components --format json
+# Basic usage
+aartisan port ./my-react-app --output ./my-aartisan-app
 ```
 
-### Porting an Existing App
+### Annotating Components with LLM
 
 ```bash
-# Port an existing React app to use aartisan
-aartisan port ./my-existing-app --output ./my-aartisan-app
+# Enhance components with AI-powered annotations
+aartisan annotate ./src/components
+
+# Specify an API key
+aartisan annotate ./src/components --api-key YOUR_API_KEY --provider gemini
 ```
 
-## Component Enhancement Approaches
+## 🧩 Component Enhancement Approaches
+
+Aartisan offers several methods to enhance your React components with semantic metadata:
 
 ### 1. Component Introspection System
+
+The `defineComponent` function provides a comprehensive way to define components with semantic metadata.
 
 ```jsx
 import { defineComponent } from 'aartisan/react';
@@ -76,29 +77,9 @@ const ProductCard = defineComponent({
 });
 ```
 
-### 2. Component Directives
+### 2. Hooks-Based Approach
 
-```jsx
-import { directive } from 'aartisan/directives';
-
-// Define a directive
-const aiPurpose = directive((element, purpose) => {
-  element.setAttribute('data-ai-purpose', purpose);
-});
-
-// Use in a component
-function ProductCard({ name, price }) {
-  return (
-    <div {...aiPurpose('product-display')}>
-      <h3>{name}</h3>
-      <p>${price}</p>
-      <button {...aiPurpose('add-to-cart')}>Add to Cart</button>
-    </div>
-  );
-}
-```
-
-### 3. Hooks-Based Approach
+For function components, the `useAIEnhanced` hook provides a simple way to add metadata.
 
 ```jsx
 import { useAIEnhanced } from 'aartisan/hooks';
@@ -111,13 +92,63 @@ function ProductCard(props) {
   
   return (
     <div ref={ref} {...aiProps}>
-      {/* Component content */}
+      <h3>{props.name}</h3>
+      <p>${props.price}</p>
+      <button onClick={props.onAddToCart}>Add to Cart</button>
     </div>
   );
 }
 ```
 
-### 4. LLM-Powered Comment Directives
+### 3. Directives Approach
+
+For simpler enhancement needs, use directives to add semantic attributes.
+
+```jsx
+import { aiPurpose } from 'aartisan/directives';
+
+function ProductCard({ name, price }) {
+  return (
+    <div {...aiPurpose('product-display')}>
+      <h3>{name}</h3>
+      <p>${price}</p>
+      <button {...aiPurpose('add-to-cart')}>Add to Cart</button>
+    </div>
+  );
+}
+```
+
+### 4. Higher-Order Components (HOC)
+
+Ideal for class components or when you want to enhance a component without modifying its implementation.
+
+```jsx
+import { withAIEnhancement } from 'aartisan/react';
+
+class ProductCard extends React.Component {
+  render() {
+    return (
+      <div className="card">
+        <h3>{this.props.name}</h3>
+        <p>${this.props.price}</p>
+        <button>Add to Cart</button>
+      </div>
+    );
+  }
+}
+
+export default withAIEnhancement({
+  name: 'ProductCard',
+  semantics: {
+    purpose: 'display-product',
+    interactions: ['add-to-cart']
+  }
+})(ProductCard);
+```
+
+### 5. LLM-Powered Comment Directives
+
+Add comment directives that will be processed by the `annotate` command.
 
 ```jsx
 // @aartisan:analyze
@@ -133,7 +164,9 @@ function ProductCard({ name, price, image, onAddToCart }) {
 }
 ```
 
-## Vite Plugin Configuration
+## ⚙️ Vite Plugin Configuration
+
+Aartisan includes a Vite plugin for build-time optimization.
 
 ```js
 // vite.config.js
@@ -153,9 +186,9 @@ export default defineConfig({
 });
 ```
 
-## AI Integration
+## 🤖 AI Integration
 
-Aartisan can use LLMs (like Gemini or Cohere) to automatically analyze and enhance components. This requires an API key.
+Aartisan can use LLMs to automatically analyze and enhance components. This requires an API key from Gemini or Cohere.
 
 ```js
 // Configure in your application
@@ -169,10 +202,85 @@ await initializeProviders({
 });
 ```
 
-## Documentation
+## 🧠 Context Provider
 
-For more detailed documentation, examples, and API reference, please visit the [full documentation](https://github.com/yourusername/aartisan).
+Use the AartisanProvider at the root of your application to create a shared semantic context:
 
-## License
+```jsx
+import { AartisanProvider } from 'aartisan/react';
+
+function App() {
+  return (
+    <AartisanProvider 
+      config={{
+        appName: 'My E-commerce App',
+        appPurpose: 'online-shopping',
+        accessibilityLevel: 'AA'
+      }}
+    >
+      <YourApp />
+    </AartisanProvider>
+  );
+}
+```
+
+## 📋 CLI Commands
+
+Aartisan provides several commands to help you work with your React applications:
+
+- `create`: Create a new AI-optimized React application
+- `port`: Convert an existing React app to use Aartisan features
+- `annotate`: Enhance components with LLM-powered semantic analysis
+
+## 🔍 Example
+
+Here's a complete example of an enhanced component:
+
+```jsx
+import { useAIEnhanced, useAIContext } from 'aartisan/react';
+
+function ProductDetails({ product, onAddToCart }) {
+  const { ref, aiProps } = useAIEnhanced('product-details', {
+    purpose: 'display-product-information',
+    interactions: ['view', 'add-to-cart']
+  });
+  
+  const { context } = useAIContext();
+  
+  return (
+    <div ref={ref} {...aiProps} className="product-details">
+      <img src={product.image} alt={product.name} />
+      <h2>{product.name}</h2>
+      <p className="price">${product.price}</p>
+      <p className="description">{product.description}</p>
+      <button 
+        onClick={() => {
+          onAddToCart(product);
+          // Context aware of product state
+          context.lastProductAdded = product.id;
+        }}
+        className="add-to-cart-btn"
+      >
+        Add to Cart
+      </button>
+    </div>
+  );
+}
+```
+
+## 📚 Documentation
+
+For detailed documentation on specific features:
+
+- [Component Enhancement Guide](docs/component-enhancement.md)
+- [Porting Guide](docs/porting.md)
+- [AI Integration](docs/ai-integration.md)
+- [Vite Plugin Options](docs/vite-plugin.md)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
 
 MIT
