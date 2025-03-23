@@ -760,6 +760,10 @@ Generate a detailed, well-formatted response that fulfills the task requirements
                     message=f"{system_message}\n\nUser Request:\n{user_message}",
                     temperature=0.7,
                 )
+                self.metrics["total_tokens"]["prompt"] += response.usage.tokens.input_tokens
+                self.metrics["total_tokens"]["completion"] += response.usage.tokens.output_tokens
+                self.metrics["total_tokens"]["total"] += response.usage.tokens.input_tokens + response.usage.tokens.output_tokens
+                
 
             elif self.provider == "gemini":
                 response = self.client.generate_content(
@@ -767,10 +771,10 @@ Generate a detailed, well-formatted response that fulfills the task requirements
                     generation_config={"temperature": 0.7}
                 )
             
-            # Update token metrics
-            self.metrics["total_tokens"]["prompt"] += response.usage_metadata.prompt_token_count
-            self.metrics["total_tokens"]["completion"] += response.usage_metadata.candidates_token_count
-            self.metrics["total_tokens"]["total"] += response.usage_metadata.total_token_count
+                # Update token metrics
+                self.metrics["total_tokens"]["prompt"] += response.usage_metadata.prompt_token_count
+                self.metrics["total_tokens"]["completion"] += response.usage_metadata.candidates_token_count
+                self.metrics["total_tokens"]["total"] += response.usage_metadata.total_token_count
 
             
             # Extract the content from the 'candidates' list (as per your provided structure)
@@ -890,6 +894,11 @@ Be clear, precise, and focus on completing the task efficiently."""
                         messages=prompt,
                         temperature=0.2,
                     )
+
+                    # Update token metrics
+                    self.metrics["total_tokens"]["prompt"] += response.usage.tokens.input_tokens
+                    self.metrics["total_tokens"]["completion"] += response.usage.tokens.output_tokens
+                    self.metrics["total_tokens"]["total"] += response.usage.tokens.input_tokens + response.usage.tokens.output_tokens
                 
                 elif self.provider == "gemini":
                     response = self.client.generate_content(
@@ -897,10 +906,10 @@ Be clear, precise, and focus on completing the task efficiently."""
                         generation_config={"temperature": 0.2},
                     )
                 
-                # Update token metrics
-                self.metrics["total_tokens"]["prompt"] += response.usage_metadata.prompt_token_count
-                self.metrics["total_tokens"]["completion"] += response.usage_metadata.candidates_token_count
-                self.metrics["total_tokens"]["total"] += response.usage_metadata.total_token_count
+                    # Update token metrics
+                    self.metrics["total_tokens"]["prompt"] += response.usage_metadata.prompt_token_count
+                    self.metrics["total_tokens"]["completion"] += response.usage_metadata.candidates_token_count
+                    self.metrics["total_tokens"]["total"] += response.usage_metadata.total_token_count
 
                 # Extract the content from the 'ca  ndidates' list (as per your provided structure)
                 # Ensure there is at least one candidate and that it contains the correct 'content'
